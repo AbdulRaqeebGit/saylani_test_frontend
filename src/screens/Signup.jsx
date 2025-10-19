@@ -1,72 +1,56 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Input from "../components/Input.jsx";
+import React, { useState, useEffect } from "react";
+import Input from "../components/Input";
+import { useNavigate, Link } from "react-router-dom";
 
 const Signup = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ username: "", email: "", password: "" });
   const navigate = useNavigate();
 
-  const handleSignup = (e) => {
-    e.preventDefault();
-
-    if (!name || !email || !password) {
-      alert("Please fill all fields!");
-      return;
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigate("/dashboard");
     }
+  }, [navigate]);
 
-    alert("Signup Successful!");
-    navigate("/login");
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("https://saylani-test-backend.vercel.app/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("username", form.username);
+        navigate("/dashboard"); // redirect immediately
+      } else {
+        alert(data.message || "Signup failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error signing up");
+    }
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-100 to-blue-200 min-h-screen flex items-center justify-center">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-96">
-        <h1 className="text-3xl font-bold text-center mb-6 text-blue-600">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-sm">
+        <h2 className="text-2xl font-bold mb-4 text-center">Signup</h2>
+        <Input label="Username" name="username" value={form.username} onChange={handleChange} placeholder="Enter username" />
+        <Input label="Email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="Enter email" />
+        <Input label="Password" type="password" name="password" value={form.password} onChange={handleChange} placeholder="Enter password" />
+        <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition mt-2">
           Signup
-        </h1>
-
-        <form onSubmit={handleSignup} className="space-y-4 flex flex-col items-center">
-          <Input
-            type="text"
-            placeholder="Enter your Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-
-          <Input
-            type="email"
-            placeholder="Enter your Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <Input
-            type="password"
-            placeholder="Enter your Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <button
-            type="submit"
-            className="bg-blue-500 text-white py-2 w-80 rounded-lg hover:bg-blue-600 transition"
-          >
-            Signup
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-600 mt-4">
-          Already have an account?{" "}
-          <span
-            onClick={() => navigate("/login")}
-            className="text-blue-500 cursor-pointer hover:underline"
-          >
-            Login
-          </span>
+        </button>
+        <p className="text-sm mt-4 text-center text-gray-600">
+          Already have an account? <Link to="/login" className="text-indigo-600 hover:underline">Login</Link>
         </p>
-      </div>
+      </form>
     </div>
   );
 };

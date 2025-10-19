@@ -1,66 +1,55 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import Input from "../components/Input";
+import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-
-    if (!email || !password) {
-      alert("Please fill all fields!");
-      return;
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigate("/dashboard");
     }
+  }, [navigate]);
 
-    alert("Login Successful!");
-    navigate("/");
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("https://saylani-test-backend.vercel.app/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("username", data.user.username);
+        navigate("/dashboard"); // redirect immediately
+      } else {
+        alert(data.message || "Login failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error logging in");
+    }
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-100 to-blue-200 min-h-screen flex items-center justify-center">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-96">
-        <h1 className="text-3xl font-bold text-center mb-6 text-blue-600">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-sm">
+        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+        <Input label="Email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="Enter email" />
+        <Input label="Password" type="password" name="password" value={form.password} onChange={handleChange} placeholder="Enter password" />
+        <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition mt-2">
           Login
-        </h1>
-
-        <form onSubmit={handleLogin} className="space-y-4 flex flex-col items-center">
-          <Input
-            type="email"
-            placeholder="Enter your Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <Input
-            type="password"
-            placeholder="Enter your Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <button
-            type="submit"
-            className="bg-blue-500 text-white py-2 w-80 rounded-lg hover:bg-blue-600 transition"
-          >
-            Login
-          </button>
-        </form>
-
-        <div className="text-center mt-4 text-sm text-gray-600">
-          <p>
-            Don’t have an account?{" "}
-            <span
-              onClick={() => navigate("/signup")}
-              className="text-blue-500 cursor-pointer hover:underline"
-            >
-              Signup
-            </span>
-          </p>
-        </div>
-      </div>
+        </button>
+        <p className="text-sm mt-4 text-center text-gray-600">
+          Don't have an account? <Link to="/signup" className="text-indigo-600 hover:underline">Signup</Link>
+        </p>
+      </form>
     </div>
   );
 };
