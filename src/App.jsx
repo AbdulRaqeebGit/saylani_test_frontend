@@ -29,7 +29,7 @@ function App() {
     <Router>
       <Routes>
         <Route
-          path="/saylani_test_frontend"
+          path="/saylani_test_frontend/"
           element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />}
         />
         <Route path="/signup" element={<Signup />} />
